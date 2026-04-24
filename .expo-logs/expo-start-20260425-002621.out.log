@@ -1,0 +1,18 @@
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL
+Starting project at D:\Git Code\aurora-music
+React Compiler enabled
+Starting Metro Bundler
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓░░░░░░░░░░░░ 25.0% (114/272)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓░░░░░░░░ 52.8% (449/618)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 78.4% (665/751)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.2% ( 986/1068)
+λ Bundled 8793ms node_modules\expo-router\node\render.js (1244 modules)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98.5% (1195/1204)
+Web Bundled 10577ms node_modules\expo-router\entry.js (1204 modules)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 34ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 320ms node_modules\expo-router\entry.js (1 module)

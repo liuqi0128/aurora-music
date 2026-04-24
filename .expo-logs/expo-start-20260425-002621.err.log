@@ -1,0 +1,27 @@
+"shadow*" style props are deprecated. Use "boxShadow".
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+  console.warn (D:\Git Code\aurora-music\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:161:21)
+  warnOnce (D:\Git Code\aurora-music\node_modules\react-native-web\dist\modules\warnOnce\index.js:24:13)
+  createDOMProps (D:\Git Code\aurora-music\node_modules\react-native-web\dist\modules\createDOMProps\index.js:805:13)
+  createElement (D:\Git Code\aurora-music\node_modules\react-native-web\dist\exports\createElement\index.js:23:32)
+  Component (D:\Git Code\aurora-music\node_modules\react-native-web\dist\exports\View\index.js:111:23)
+  Object.callComponentInDEV [as react-stack-bottom-frame] (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:8970:18)
+  renderWithHooks (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:4699:19)
+  run (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5539:39)
+  retryNode (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5899:31)
+  renderNodeDestructive (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5849:11)
+Error: Premature close
+    at onclose (node:internal/streams/end-of-stream:158:30)
+    at processTicksAndRejections (node:internal/process/task_queues:85:11)
+"shadow*" style props are deprecated. Use "boxShadow".
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+  console.warn (D:\Git Code\aurora-music\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:161:21)
+  warnOnce (D:\Git Code\aurora-music\node_modules\react-native-web\dist\modules\warnOnce\index.js:24:13)
+  createDOMProps (D:\Git Code\aurora-music\node_modules\react-native-web\dist\modules\createDOMProps\index.js:805:13)
+  createElement (D:\Git Code\aurora-music\node_modules\react-native-web\dist\exports\createElement\index.js:23:32)
+  Component (D:\Git Code\aurora-music\node_modules\react-native-web\dist\exports\View\index.js:111:23)
+  Object.callComponentInDEV [as react-stack-bottom-frame] (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:8970:18)
+  renderWithHooks (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:4699:19)
+  run (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5539:39)
+  retryNode (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5899:31)
+  renderNodeDestructive (D:\Git Code\aurora-music\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5849:11)
