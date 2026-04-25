@@ -1,9 +1,11 @@
 import { Image } from 'expo-image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Animated, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppTheme } from '@/constants/theme';
 
 export type BannerCarouselItem = {
   id: string;
@@ -27,6 +29,7 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
   const scrollRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const virtualIndexRef = useRef(data.length > 1 ? 1 : 0);
+  const activeIndexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const itemWidth = Math.round(width * 0.74);
@@ -54,11 +57,42 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
     ];
   }, [data]);
 
+  const updateActiveIndex = useCallback((nextIndex: number) => {
+    if (activeIndexRef.current === nextIndex) {
+      return;
+    }
+
+    activeIndexRef.current = nextIndex;
+    setActiveIndex(nextIndex);
+  }, []);
+
+  const getDisplayIndex = useCallback(
+    (offsetX: number) => {
+      if (data.length <= 1) {
+        return 0;
+      }
+
+      const rawIndex = Math.round(offsetX / interval);
+
+      if (rawIndex <= 0) {
+        return data.length - 1;
+      }
+
+      if (rawIndex >= data.length + 1) {
+        return 0;
+      }
+
+      return rawIndex - 1;
+    },
+    [data.length, interval]
+  );
+
   useEffect(() => {
     const startIndex = data.length > 1 ? 1 : 0;
     const startOffset = startIndex * interval;
 
     virtualIndexRef.current = startIndex;
+    activeIndexRef.current = 0;
     setActiveIndex(0);
     scrollX.setValue(startOffset);
     requestAnimationFrame(() => {
@@ -89,7 +123,7 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
     const rawIndex = Math.round(offsetX / interval);
 
     if (data.length <= 1) {
-      setActiveIndex(0);
+      updateActiveIndex(0);
       virtualIndexRef.current = 0;
       return;
     }
@@ -97,7 +131,7 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
     if (rawIndex === 0) {
       const targetIndex = data.length;
 
-      setActiveIndex(data.length - 1);
+      updateActiveIndex(data.length - 1);
       virtualIndexRef.current = targetIndex;
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo({ animated: false, x: targetIndex * interval, y: 0 });
@@ -106,7 +140,7 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
     }
 
     if (rawIndex === data.length + 1) {
-      setActiveIndex(0);
+      updateActiveIndex(0);
       virtualIndexRef.current = 1;
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo({ animated: false, x: interval, y: 0 });
@@ -114,7 +148,7 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
       return;
     }
 
-    setActiveIndex(rawIndex - 1);
+    updateActiveIndex(rawIndex - 1);
     virtualIndexRef.current = rawIndex;
   };
 
@@ -128,7 +162,12 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
         onMomentumScrollEnd={(event) => handleScrollEnd(event.nativeEvent.contentOffset.x)}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true }
+          {
+            listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+              updateActiveIndex(getDisplayIndex(event.nativeEvent.contentOffset.x));
+            },
+            useNativeDriver: true,
+          }
         )}
         scrollEventThrottle={16}
         showsHorizontalScrollIndicator={false}
@@ -158,11 +197,17 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
                   width: itemWidth,
                 },
               ]}>
-              <ThemedView lightColor="#FFFFFF" darkColor="#202326" style={styles.card}>
+              <ThemedView
+                lightColor={AppTheme.colors.background}
+                darkColor={AppTheme.colors.surfaceDark}
+                style={styles.card}>
                 {item.imageUrl ? (
                   <Image contentFit="cover" source={{ uri: item.imageUrl }} style={styles.image} />
                 ) : (
-                  <ThemedView lightColor="#EEF2F6" darkColor="#2B3035" style={styles.placeholder}>
+                  <ThemedView
+                    lightColor={AppTheme.colors.surfaceSoft}
+                    darkColor={AppTheme.colors.surfaceSoftDark}
+                    style={styles.placeholder}>
                     <ThemedText numberOfLines={1} style={styles.placeholderText}>
                       {item.title ?? 'Banner'}
                     </ThemedText>
@@ -196,8 +241,8 @@ export function BannerCarousel({ data }: BannerCarouselProps) {
 
 const styles = StyleSheet.create({
   badge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    borderRadius: 999,
+    backgroundColor: AppTheme.colors.badgeOverlay,
+    borderRadius: AppTheme.radius.pill,
     bottom: 12,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -205,16 +250,16 @@ const styles = StyleSheet.create({
     right: 12,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: AppTheme.colors.textInverted,
     fontSize: 12,
     lineHeight: 16,
   },
   card: {
     aspectRatio: 2.36,
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     elevation: 2,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: AppTheme.colors.shadow,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.14,
     shadowRadius: 10,
@@ -224,13 +269,13 @@ const styles = StyleSheet.create({
     paddingBottom:20,
   },
   dot: {
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    borderRadius: 999,
+    backgroundColor: AppTheme.colors.dotInactive,
+    borderRadius: AppTheme.radius.pill,
     height: 6,
     width: 6,
   },
   dotActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AppTheme.colors.carouselDotActive,
     width: 18,
   },
   dots: {
@@ -251,7 +296,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   placeholderText: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
     fontSize: 14,
     paddingHorizontal: 12,
     textAlign: 'center',

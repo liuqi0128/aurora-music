@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppTheme } from '@/constants/theme';
 import { rankingApi, type Toplist } from '@/services/api';
 
 export default function RankingScreen() {
@@ -42,28 +43,36 @@ export default function RankingScreen() {
     };
   }, []);
 
+  if (rankingsLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.fullScreenStatus]}>
+        <ActivityIndicator color={AppTheme.colors.primary} size="large" />
+        <ThemedText style={styles.muted}>正在加载榜单...</ThemedText>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <ThemedText type="subtitle">热门榜单</ThemedText>
           <View style={styles.rankingList}>
-            {rankingsLoading ? (
-              <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.statusPanel}>
-                <ActivityIndicator color="#0a7ea4" />
-                <ThemedText style={styles.muted}>正在加载榜单...</ThemedText>
-              </ThemedView>
-            ) : null}
-
             {rankingsError ? (
-              <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.statusPanel}>
+              <ThemedView
+                lightColor={AppTheme.colors.surface}
+                darkColor={AppTheme.colors.surfaceDark}
+                style={styles.statusPanel}>
                 <ThemedText type="defaultSemiBold">榜单加载失败</ThemedText>
                 <ThemedText style={styles.muted}>{rankingsError}</ThemedText>
               </ThemedView>
             ) : null}
 
             {!rankingsLoading && !rankingsError && rankings.length === 0 ? (
-              <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.statusPanel}>
+              <ThemedView
+                lightColor={AppTheme.colors.surface}
+                darkColor={AppTheme.colors.surfaceDark}
+                style={styles.statusPanel}>
                 <ThemedText style={styles.muted}>暂无榜单数据</ThemedText>
               </ThemedView>
             ) : null}
@@ -72,8 +81,8 @@ export default function RankingScreen() {
               ? rankings.map((ranking, index) => (
                   <ThemedView
                     key={ranking.id}
-                    lightColor="#FFFFFF"
-                    darkColor="#202326"
+                    lightColor={AppTheme.colors.background}
+                    darkColor={AppTheme.colors.surfaceDark}
                     style={styles.rankingCard}>
                     {ranking.coverImgUrl ? (
                       <Image
@@ -82,7 +91,10 @@ export default function RankingScreen() {
                         style={styles.cover}
                       />
                     ) : (
-                      <ThemedView lightColor="#EEF2F6" darkColor="#2B3035" style={styles.cover}>
+                      <ThemedView
+                        lightColor={AppTheme.colors.surfaceSoft}
+                        darkColor={AppTheme.colors.surfaceSoftDark}
+                        style={styles.cover}>
                         <ThemedText numberOfLines={1} style={styles.coverText}>
                           {ranking.name}
                         </ThemedText>
@@ -138,36 +150,42 @@ const styles = StyleSheet.create({
   cover: {
     alignItems: 'center',
     aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     justifyContent: 'center',
     overflow: 'hidden',
     width: 92,
   },
   coverText: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
     fontSize: 12,
     paddingHorizontal: 8,
     textAlign: 'center',
   },
   frequency: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
     fontSize: 12,
+  },
+  fullScreenStatus: {
+    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   header: {
     gap: 10,
     marginBottom: 32,
   },
   muted: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
   },
   rankingCard: {
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     elevation: 1,
     flexDirection: 'row',
     gap: 14,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: AppTheme.colors.shadow,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -193,15 +211,15 @@ const styles = StyleSheet.create({
   },
   statusPanel: {
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     gap: 10,
     padding: 18,
   },
   subTitle: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
   },
   trackText: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
     fontSize: 14,
     lineHeight: 20,
   },

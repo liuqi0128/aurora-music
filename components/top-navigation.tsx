@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AppTheme } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 type TopNavigationProps = {
@@ -32,8 +33,8 @@ export function TopNavigation({ activeTab, onTabChange, tabs, title }: TopNaviga
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const surfaceColor = useThemeColor({ light: '#F3F6F8', dark: '#202326' }, 'background');
-  const mutedColor = useThemeColor({ light: '#6B7280', dark: '#A8B0B8' }, 'text');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const mutedColor = useThemeColor({}, 'muted');
   const hasTabs = Boolean(tabs?.length);
 
   const openDrawer = () => {
@@ -152,7 +153,7 @@ export function TopNavigation({ activeTab, onTabChange, tabs, title }: TopNaviga
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: AppTheme.colors.overlay,
   },
   center: {
     alignItems: 'center',
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   drawer: {
     height: '100%',
     paddingHorizontal: 20,
-    shadowColor: '#000',
+    shadowColor: AppTheme.colors.shadow,
     shadowOffset: { height: 0, width: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 24,

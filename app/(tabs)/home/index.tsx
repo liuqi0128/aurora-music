@@ -4,6 +4,7 @@ import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react
 import { BannerCarousel, type BannerCarouselItem } from '@/components/banner-carousel';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppTheme } from '@/constants/theme';
 import { homeApi, type Banner, type BannerType } from '@/services/api';
 
 export default function RecommendScreen() {
@@ -67,14 +68,20 @@ export default function RecommendScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.bannerSection}>
           {bannerLoading ? (
-            <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.bannerStatus}>
-              <ActivityIndicator color="#0a7ea4" />
+            <ThemedView
+              lightColor={AppTheme.colors.surface}
+              darkColor={AppTheme.colors.surfaceDark}
+              style={styles.bannerStatus}>
+              <ActivityIndicator color={AppTheme.colors.primary} />
               <ThemedText style={styles.muted}>正在加载推荐...</ThemedText>
             </ThemedView>
           ) : null}
 
           {bannerError ? (
-            <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.bannerStatus}>
+            <ThemedView
+              lightColor={AppTheme.colors.surface}
+              darkColor={AppTheme.colors.surfaceDark}
+              style={styles.bannerStatus}>
               <ThemedText type="defaultSemiBold">Banner 加载失败</ThemedText>
               <ThemedText style={styles.muted}>{bannerError}</ThemedText>
             </ThemedView>
@@ -87,7 +94,10 @@ export default function RecommendScreen() {
 
         <View style={styles.section}>
           <ThemedText type="subtitle">推荐歌单</ThemedText>
-          <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.panel}>
+          <ThemedView
+            lightColor={AppTheme.colors.surface}
+            darkColor={AppTheme.colors.surfaceDark}
+            style={styles.panel}>
             <ThemedText type="defaultSemiBold">Aurora Daily Mix</ThemedText>
             <ThemedText style={styles.muted}>为你整理的精选旋律</ThemedText>
           </ThemedView>
@@ -103,7 +113,7 @@ const styles = StyleSheet.create({
   },
   bannerStatus: {
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     gap: 10,
     minHeight: 120,
     padding: 18,
@@ -117,10 +127,10 @@ const styles = StyleSheet.create({
     paddingTop: 28,
   },
   muted: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
   },
   panel: {
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     gap: 8,
     padding: 18,
   },

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TopNavigation } from '@/components/top-navigation';
+import { AppTheme } from '@/constants/theme';
 
 export default function MineScreen() {
   return (
@@ -16,7 +17,11 @@ export default function MineScreen() {
 
         <View style={styles.list}>
           {['我的收藏', '最近播放', '本地音乐'].map((item) => (
-            <ThemedView key={item} lightColor="#F3F6F8" darkColor="#202326" style={styles.row}>
+            <ThemedView
+              key={item}
+              lightColor={AppTheme.colors.surface}
+              darkColor={AppTheme.colors.surfaceDark}
+              style={styles.row}>
               <ThemedText type="defaultSemiBold">{item}</ThemedText>
             </ThemedView>
           ))}
@@ -39,13 +44,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   subTitle: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
   },
   list: {
     gap: 12,
   },
   row: {
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     paddingHorizontal: 18,
     paddingVertical: 18,
   },

@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppTheme } from '@/constants/theme';
 
 export default function PlaylistsScreen() {
   return (
@@ -14,7 +15,10 @@ export default function PlaylistsScreen() {
 
         <View style={styles.section}>
           <ThemedText type="subtitle">精选歌单</ThemedText>
-          <ThemedView lightColor="#F3F6F8" darkColor="#202326" style={styles.panel}>
+          <ThemedView
+            lightColor={AppTheme.colors.surface}
+            darkColor={AppTheme.colors.surfaceDark}
+            style={styles.panel}>
             <ThemedText type="defaultSemiBold">城市夜行</ThemedText>
             <ThemedText style={styles.muted}>适合夜晚通勤和独处的声音</ThemedText>
           </ThemedView>
@@ -38,10 +42,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   muted: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
   },
   panel: {
-    borderRadius: 8,
+    borderRadius: AppTheme.radius.md,
     gap: 8,
     padding: 18,
   },
@@ -49,6 +53,6 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   subTitle: {
-    color: '#6B7280',
+    color: AppTheme.colors.muted,
   },
 });
