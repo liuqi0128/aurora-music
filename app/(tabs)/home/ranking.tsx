@@ -1,49 +1,35 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 
+import { createPlaylistDetailHref } from '@/components/home/playlist-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppTheme } from '@/constants/theme';
+import { useCachedRequest } from '@/hooks/use-cached-request';
 import { rankingApi, type Toplist } from '@/services/api';
 
 export default function RankingScreen() {
-  const [rankings, setRankings] = useState<Toplist[]>([]);
-  const [rankingsError, setRankingsError] = useState('');
-  const [rankingsLoading, setRankingsLoading] = useState(false);
+  const router = useRouter();
+  const loadRankings = useCallback(() => rankingApi.getToplistDetail(), []);
+  const {
+    data: rankingsData,
+    error: rankingsError,
+    loading: rankingsLoading,
+    refresh: refreshRankings,
+    refreshing: rankingsRefreshing,
+  } = useCachedRequest('home:rankings:toplist-detail', loadRankings);
+  const rankings: Toplist[] = rankingsData?.list ?? [];
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadRankings() {
-      setRankingsError('');
-      setRankingsLoading(true);
-
-      try {
-        const data = await rankingApi.getToplistDetail();
-
-        if (mounted) {
-          setRankings(data.list ?? []);
-        }
-      } catch (error) {
-        if (mounted) {
-          setRankingsError(error instanceof Error ? error.message : '排行榜加载失败');
-        }
-      } finally {
-        if (mounted) {
-          setRankingsLoading(false);
-        }
-      }
-    }
-
-    loadRankings();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (rankingsLoading) {
+  if (rankingsLoading && rankings.length === 0) {
     return (
       <ThemedView style={[styles.container, styles.fullScreenStatus]}>
         <ActivityIndicator color={AppTheme.colors.primary} size="large" />
@@ -54,11 +40,23 @@ export default function RankingScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            colors={[AppTheme.colors.primary]}
+            onRefresh={() => {
+              void refreshRankings();
+            }}
+            refreshing={rankingsRefreshing}
+            tintColor={AppTheme.colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <ThemedText type="subtitle">热门榜单</ThemedText>
           <View style={styles.rankingList}>
-            {rankingsError ? (
+            {rankingsError && rankings.length === 0 ? (
               <ThemedView
                 lightColor={AppTheme.colors.surface}
                 darkColor={AppTheme.colors.surfaceDark}
@@ -77,58 +75,72 @@ export default function RankingScreen() {
               </ThemedView>
             ) : null}
 
-            {!rankingsLoading && !rankingsError
+            {rankings.length > 0
               ? rankings.map((ranking, index) => (
-                  <ThemedView
+                  <Pressable
                     key={ranking.id}
-                    lightColor={AppTheme.colors.background}
-                    darkColor={AppTheme.colors.surfaceDark}
-                    style={styles.rankingCard}>
-                    {ranking.coverImgUrl ? (
-                      <Image
-                        contentFit="cover"
-                        source={{ uri: ranking.coverImgUrl }}
-                        style={styles.cover}
-                      />
-                    ) : (
-                      <ThemedView
-                        lightColor={AppTheme.colors.surfaceSoft}
-                        darkColor={AppTheme.colors.surfaceSoftDark}
-                        style={styles.cover}>
-                        <ThemedText numberOfLines={1} style={styles.coverText}>
-                          {ranking.name}
-                        </ThemedText>
-                      </ThemedView>
-                    )}
-
-                    <View style={styles.rankingInfo}>
-                      <View style={styles.rankingHeader}>
-                        <ThemedText
-                          numberOfLines={1}
-                          style={styles.rankingTitle}
-                          type="defaultSemiBold">
-                          {index + 1}. {ranking.name}
-                        </ThemedText>
-                        {ranking.updateFrequency ? (
-                          <ThemedText style={styles.frequency}>
-                            {ranking.updateFrequency}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      router.push(
+                        createPlaylistDetailHref({
+                          coverUrl: ranking.coverImgUrl,
+                          from: '/home/ranking',
+                          id: ranking.id,
+                          name: ranking.name,
+                        })
+                      );
+                    }}
+                    style={({ pressed }) => [pressed && styles.pressed]}>
+                    <ThemedView
+                      lightColor={AppTheme.colors.background}
+                      darkColor={AppTheme.colors.surfaceDark}
+                      style={styles.rankingCard}>
+                      {ranking.coverImgUrl ? (
+                        <Image
+                          contentFit="cover"
+                          source={{ uri: ranking.coverImgUrl }}
+                          style={styles.cover}
+                        />
+                      ) : (
+                        <ThemedView
+                          lightColor={AppTheme.colors.surfaceSoft}
+                          darkColor={AppTheme.colors.surfaceSoftDark}
+                          style={styles.cover}>
+                          <ThemedText numberOfLines={1} style={styles.coverText}>
+                            {ranking.name}
                           </ThemedText>
-                        ) : null}
-                      </View>
+                        </ThemedView>
+                      )}
 
-                      <View style={styles.trackList}>
-                        {ranking.tracks?.slice(0, 3).map((track, trackIndex) => (
+                      <View style={styles.rankingInfo}>
+                        <View style={styles.rankingHeader}>
                           <ThemedText
-                            key={`${ranking.id}-${trackIndex}`}
                             numberOfLines={1}
-                            style={styles.trackText}>
-                            {trackIndex + 1}. {track.first}
-                            {track.second ? ` - ${track.second}` : ''}
+                            style={styles.rankingTitle}
+                            type="defaultSemiBold">
+                            {index + 1}. {ranking.name}
                           </ThemedText>
-                        ))}
+                          {ranking.updateFrequency ? (
+                            <ThemedText style={styles.frequency}>
+                              {ranking.updateFrequency}
+                            </ThemedText>
+                          ) : null}
+                        </View>
+
+                        <View style={styles.trackList}>
+                          {ranking.tracks?.slice(0, 3).map((track, trackIndex) => (
+                            <ThemedText
+                              key={`${ranking.id}-${trackIndex}`}
+                              numberOfLines={1}
+                              style={styles.trackText}>
+                              {trackIndex + 1}. {track.first}
+                              {track.second ? ` - ${track.second}` : ''}
+                            </ThemedText>
+                          ))}
+                        </View>
                       </View>
-                    </View>
-                  </ThemedView>
+                    </ThemedView>
+                  </Pressable>
                 ))
               : null}
           </View>
@@ -177,6 +189,9 @@ const styles = StyleSheet.create({
   },
   muted: {
     color: AppTheme.colors.muted,
+  },
+  pressed: {
+    opacity: 0.72,
   },
   rankingCard: {
     alignItems: 'center',

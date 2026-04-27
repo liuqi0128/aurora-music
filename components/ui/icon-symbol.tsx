@@ -14,6 +14,7 @@ type IconSymbolName = keyof typeof MAPPING;
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
+  'chevron.left': 'chevron-left',
   'house.fill': 'home',
   'line.3.horizontal': 'menu',
   magnifyingglass: 'search',

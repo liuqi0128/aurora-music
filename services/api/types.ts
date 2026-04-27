@@ -24,6 +24,136 @@ export type Playlist = {
   trackCount?: number;
 };
 
+export type PersonalizedParams = {
+  limit?: number;
+};
+
+export type PersonalizedPlaylist = {
+  alg?: string;
+  canDislike?: boolean;
+  copywriter?: string;
+  highQuality?: boolean;
+  id: ApiId;
+  name: string;
+  picUrl?: string;
+  playCount?: number;
+  trackCount?: number;
+  trackNumber?: number;
+  type?: number;
+};
+
+export type PlaylistDetailParams = {
+  id: ApiId;
+  s?: number;
+};
+
+export type PlaylistTrackId = {
+  alg?: string | null;
+  at?: number;
+  id: ApiId;
+  rcmdReason?: string;
+  t?: number;
+  uid?: ApiId;
+  v?: number;
+};
+
+export type SongArtist = {
+  alias?: string[];
+  id?: ApiId;
+  name?: string;
+  tns?: string[];
+};
+
+export type SongAlbum = {
+  id?: ApiId;
+  name?: string;
+  pic?: ApiId;
+  picUrl?: string;
+  tns?: string[];
+};
+
+export type PlaylistSong = Song & {
+  al?: SongAlbum;
+  alia?: string[];
+  ar?: SongArtist[];
+  dt?: number;
+  fee?: number;
+  mv?: ApiId;
+};
+
+export type PlaylistCreator = {
+  avatarUrl?: string;
+  nickname?: string;
+  userId?: ApiId;
+};
+
+export type PlaylistDetail = Playlist & {
+  coverImgUrl?: string;
+  creator?: PlaylistCreator;
+  playCount?: number;
+  subscribedCount?: number;
+  tags?: string[];
+  trackIds?: PlaylistTrackId[];
+  tracks?: PlaylistSong[];
+};
+
+export type PlaylistDetailResponse = {
+  code: number;
+  playlist?: PlaylistDetail;
+  privileges?: unknown[];
+};
+
+export type SongDetailResponse = {
+  code: number;
+  privileges?: unknown[];
+  songs: PlaylistSong[];
+};
+
+export type PersonalizedResponse = {
+  category?: number;
+  code: number;
+  hasTaste?: boolean;
+  result: PersonalizedPlaylist[];
+};
+
+export type TopArtistsParams = {
+  limit?: number;
+  offset?: number;
+};
+
+export type TopArtist = {
+  accountId?: ApiId | null;
+  albumSize?: number;
+  alias?: string[];
+  alg?: string | null;
+  briefDesc?: string;
+  fansCount?: number;
+  followed?: boolean;
+  id: ApiId;
+  identifyTag?: string[] | null;
+  img1v1Id?: ApiId;
+  img1v1Id_str?: string;
+  img1v1Url?: string;
+  isSubed?: boolean | null;
+  musicSize?: number;
+  mvSize?: number | null;
+  name: string;
+  picId?: ApiId;
+  picId_str?: string;
+  picUrl?: string;
+  publishTime?: number | null;
+  showPrivateMsg?: boolean | null;
+  topicPerson?: number;
+  trans?: string;
+  transNames?: string[] | null;
+};
+
+export type TopArtistsResponse = {
+  artists: TopArtist[];
+  code: number;
+  more: boolean;
+};
+
 export type BannerType = 0 | 1 | 2 | 3;
 
 export type Banner = {

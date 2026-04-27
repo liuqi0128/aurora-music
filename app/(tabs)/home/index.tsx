@@ -1,17 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo } from 'react';
+import { Platform, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
-import { BannerCarousel, type BannerCarouselItem } from '@/components/banner-carousel';
-import { ThemedText } from '@/components/themed-text';
+import { HomeBannerSection } from '@/components/home/home-banner-section';
+import { RecommendedPlaylistsSection } from '@/components/home/recommended-playlists-section';
+import { TopArtistsSection } from '@/components/home/top-artists-section';
 import { ThemedView } from '@/components/themed-view';
 import { AppTheme } from '@/constants/theme';
-import { homeApi, type Banner, type BannerType } from '@/services/api';
+import { useCachedRequest } from '@/hooks/use-cached-request';
+import {
+  homeApi,
+  type Banner,
+  type BannerType,
+  type PersonalizedPlaylist,
+  type TopArtist,
+} from '@/services/api';
+
+const RECOMMENDATION_LIMIT = 6;
+const TOP_ARTIST_LIMIT = 8;
 
 export default function RecommendScreen() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [bannerError, setBannerError] = useState('');
-  const [bannerLoading, setBannerLoading] = useState(false);
-
   const bannerType = useMemo<BannerType>(() => {
     if (Platform.OS === 'web') {
       return 0;
@@ -22,102 +29,80 @@ export default function RecommendScreen() {
     return 1;
   }, []);
 
-  const bannerItems = useMemo<BannerCarouselItem[]>(
-    () =>
-      banners.map((banner, index) => ({
-        id: `${banner.encodeId ?? banner.targetId ?? 'banner'}-${index}`,
-        imageUrl: banner.pic ?? banner.imageUrl,
-        title: banner.typeTitle,
-      })),
-    [banners]
+  const loadBanners = useCallback(() => homeApi.getBanners(bannerType), [bannerType]);
+  const {
+    data: bannerData,
+    error: bannerError,
+    loading: bannerLoading,
+    refresh: refreshBanners,
+    refreshing: bannersRefreshing,
+  } = useCachedRequest(`home:banners:${bannerType}`, loadBanners);
+  const banners = useMemo<Banner[]>(() => bannerData?.banners ?? [], [bannerData]);
+
+  const loadRecommendations = useCallback(
+    () => homeApi.getRecommendations({ limit: RECOMMENDATION_LIMIT }),
+    []
+  );
+  const {
+    data: recommendationData,
+    error: recommendationError,
+    loading: recommendationsLoading,
+    refresh: refreshRecommendations,
+    refreshing: recommendationsRefreshing,
+  } = useCachedRequest('home:recommendations:personalized', loadRecommendations);
+  const recommendations = useMemo<PersonalizedPlaylist[]>(
+    () => recommendationData?.result ?? [],
+    [recommendationData]
   );
 
-  useEffect(() => {
-    let mounted = true;
+  const loadTopArtists = useCallback(
+    () => homeApi.getTopArtists({ limit: TOP_ARTIST_LIMIT, offset: 0 }),
+    []
+  );
+  const {
+    data: topArtistsData,
+    error: topArtistsError,
+    loading: topArtistsLoading,
+    refresh: refreshTopArtists,
+    refreshing: topArtistsRefreshing,
+  } = useCachedRequest('home:artists:top', loadTopArtists);
+  const topArtists = useMemo<TopArtist[]>(() => topArtistsData?.artists ?? [], [topArtistsData]);
 
-    async function loadBanners() {
-      setBannerError('');
-      setBannerLoading(true);
-
-      try {
-        const data = await homeApi.getBanners(bannerType);
-
-        if (mounted) {
-          setBanners(data.banners ?? []);
-        }
-      } catch (error) {
-        if (mounted) {
-          setBannerError(error instanceof Error ? error.message : 'Banner 加载失败');
-        }
-      } finally {
-        if (mounted) {
-          setBannerLoading(false);
-        }
-      }
-    }
-
-    loadBanners();
-
-    return () => {
-      mounted = false;
-    };
-  }, [bannerType]);
+  const refreshing = bannersRefreshing || recommendationsRefreshing || topArtistsRefreshing;
+  const refreshHome = useCallback(() => {
+    void Promise.all([refreshBanners(), refreshRecommendations(), refreshTopArtists()]);
+  }, [refreshBanners, refreshRecommendations, refreshTopArtists]);
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.bannerSection}>
-          {bannerLoading ? (
-            <ThemedView
-              lightColor={AppTheme.colors.surface}
-              darkColor={AppTheme.colors.surfaceDark}
-              style={styles.bannerStatus}>
-              <ActivityIndicator color={AppTheme.colors.primary} />
-              <ThemedText style={styles.muted}>正在加载推荐...</ThemedText>
-            </ThemedView>
-          ) : null}
-
-          {bannerError ? (
-            <ThemedView
-              lightColor={AppTheme.colors.surface}
-              darkColor={AppTheme.colors.surfaceDark}
-              style={styles.bannerStatus}>
-              <ThemedText type="defaultSemiBold">Banner 加载失败</ThemedText>
-              <ThemedText style={styles.muted}>{bannerError}</ThemedText>
-            </ThemedView>
-          ) : null}
-
-          {!bannerLoading && !bannerError && banners.length > 0 ? (
-            <BannerCarousel data={bannerItems} />
-          ) : null}
-        </View>
-
-        <View style={styles.section}>
-          <ThemedText type="subtitle">推荐歌单</ThemedText>
-          <ThemedView
-            lightColor={AppTheme.colors.surface}
-            darkColor={AppTheme.colors.surfaceDark}
-            style={styles.panel}>
-            <ThemedText type="defaultSemiBold">Aurora Daily Mix</ThemedText>
-            <ThemedText style={styles.muted}>为你整理的精选旋律</ThemedText>
-          </ThemedView>
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            colors={[AppTheme.colors.primary]}
+            onRefresh={refreshHome}
+            refreshing={refreshing}
+            tintColor={AppTheme.colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}>
+        <HomeBannerSection banners={banners} error={bannerError} loading={bannerLoading} />
+        <RecommendedPlaylistsSection
+          error={recommendationError}
+          loading={recommendationsLoading}
+          playlists={recommendations}
+        />
+        <TopArtistsSection
+          artists={topArtists}
+          error={topArtistsError}
+          loading={topArtistsLoading}
+        />
       </ScrollView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  bannerSection: {
-    marginBottom: 28,
-  },
-  bannerStatus: {
-    alignItems: 'center',
-    borderRadius: AppTheme.radius.md,
-    gap: 10,
-    minHeight: 120,
-    padding: 18,
-  },
   container: {
     flex: 1,
   },
@@ -125,16 +110,5 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingHorizontal: 24,
     paddingTop: 28,
-  },
-  muted: {
-    color: AppTheme.colors.muted,
-  },
-  panel: {
-    borderRadius: AppTheme.radius.md,
-    gap: 8,
-    padding: 18,
-  },
-  section: {
-    gap: 14,
   },
 });
