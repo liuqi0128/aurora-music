@@ -1,5 +1,7 @@
 import { request } from '@/services/api/client';
 import type {
+  ArtistTopSongsParams,
+  ArtistTopSongsResponse,
   BannerResponse,
   BannerType,
   ApiId,
@@ -11,24 +13,36 @@ import type {
   PlaylistDetailResponse,
   Ranking,
   SongDetailResponse,
+  SongUrlParams,
+  SongUrlResponse,
   TopArtistsParams,
   TopArtistsResponse,
+  TopPlaylistParams,
+  TopPlaylistResponse,
 } from '@/services/api/types';
 
 const SONG_DETAIL_CHUNK_SIZE = 400;
 
-function normalizeSongIds(ids: ApiId[] | string) {
+function normalizeSongIds(ids: ApiId | ApiId[] | string) {
   if (Array.isArray(ids)) {
     return ids.map((id) => String(id)).filter(Boolean);
   }
 
-  return ids
+  return String(ids)
     .split(',')
     .map((id) => id.trim())
     .filter(Boolean);
 }
 
 export const homeApi = {
+  getArtistTopSongs(params: ArtistTopSongsParams) {
+    return request<ArtistTopSongsResponse>({
+      method: 'GET',
+      params,
+      url: '/artist/top/song',
+    });
+  },
+
   getBanners(type: BannerType = 1) {
     return request<BannerResponse>({
       method: 'GET',
@@ -65,6 +79,14 @@ export const homeApi = {
       method: 'GET',
       params,
       url: '/personalized',
+    });
+  },
+
+  getTopPlaylists(params?: TopPlaylistParams) {
+    return request<TopPlaylistResponse>({
+      method: 'GET',
+      params,
+      url: '/top/playlist',
     });
   },
 
@@ -106,6 +128,18 @@ export const homeApi = {
       privileges: responses.flatMap((response) => response.privileges ?? []),
       songs: responses.flatMap((response) => response.songs ?? []),
     } satisfies SongDetailResponse;
+  },
+
+  getSongUrl({ id, level = 'standard', unblock }: SongUrlParams) {
+    return request<SongUrlResponse>({
+      method: 'GET',
+      params: {
+        id: normalizeSongIds(id).join(','),
+        level,
+        unblock,
+      },
+      url: '/song/url/v1',
+    });
   },
 
   getTopArtists(params?: TopArtistsParams) {

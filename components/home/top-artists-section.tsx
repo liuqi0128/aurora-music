@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { type Href, useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatFansCount } from '@/components/home/formatters';
 import { HomeSectionStatus } from '@/components/home/home-section-status';
@@ -14,7 +15,42 @@ type TopArtistsSectionProps = {
   loading: boolean;
 };
 
+function createArtistDetailHref(artist: TopArtist) {
+  const imageUrl = artist.picUrl ?? artist.img1v1Url;
+  const params = [`id=${encodeURIComponent(String(artist.id))}`];
+
+  params.push(`name=${encodeURIComponent(artist.name)}`);
+
+  if (imageUrl) {
+    params.push(`picUrl=${encodeURIComponent(imageUrl)}`);
+  }
+
+  if (artist.alias?.[0]) {
+    params.push(`alias=${encodeURIComponent(artist.alias[0])}`);
+  }
+
+  if (artist.trans) {
+    params.push(`trans=${encodeURIComponent(artist.trans)}`);
+  }
+
+  if (typeof artist.fansCount === 'number') {
+    params.push(`fansCount=${encodeURIComponent(String(artist.fansCount))}`);
+  }
+
+  if (typeof artist.musicSize === 'number') {
+    params.push(`musicSize=${encodeURIComponent(String(artist.musicSize))}`);
+  }
+
+  if (typeof artist.albumSize === 'number') {
+    params.push(`albumSize=${encodeURIComponent(String(artist.albumSize))}`);
+  }
+
+  return `/artist-detail?${params.join('&')}` as Href;
+}
+
 export function TopArtistsSection({ artists, error, loading }: TopArtistsSectionProps) {
+  const router = useRouter();
+
   return (
     <View style={styles.section}>
       <ThemedText type="subtitle">热门歌手</ThemedText>
@@ -48,11 +84,18 @@ export function TopArtistsSection({ artists, error, loading }: TopArtistsSection
               (artist.albumSize ? `${artist.albumSize} 张专辑` : '');
 
             return (
-              <ThemedView
+              <Pressable
+                accessibilityLabel={`查看 ${artist.name} 的歌曲`}
+                accessibilityRole="button"
                 key={artist.id}
-                lightColor={AppTheme.colors.background}
-                darkColor={AppTheme.colors.surfaceDark}
-                style={styles.artistCard}>
+                onPress={() => {
+                  router.push(createArtistDetailHref(artist));
+                }}
+                style={({ pressed }) => [pressed && styles.pressed]}>
+                <ThemedView
+                  lightColor={AppTheme.colors.background}
+                  darkColor={AppTheme.colors.surfaceDark}
+                  style={styles.artistCard}>
                 <View style={styles.artistAvatarFrame}>
                   {imageUrl ? (
                     <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.artistAvatar} />
@@ -79,7 +122,8 @@ export function TopArtistsSection({ artists, error, loading }: TopArtistsSection
                     {artistStat}
                   </ThemedText>
                 ) : null}
-              </ThemedView>
+                </ThemedView>
+              </Pressable>
             );
           })}
         </ScrollView>
@@ -142,6 +186,9 @@ const styles = StyleSheet.create({
   },
   horizontalScroller: {
     marginHorizontal: -24,
+  },
+  pressed: {
+    opacity: 0.72,
   },
   section: {
     gap: 14,

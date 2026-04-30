@@ -15,6 +15,65 @@ export type Song = {
   url?: string;
 };
 
+export type SongUrlLevel =
+  | 'standard'
+  | 'higher'
+  | 'exhigh'
+  | 'lossless'
+  | 'hires'
+  | 'jyeffect'
+  | 'sky'
+  | 'dolby'
+  | 'jymaster';
+
+export type SongUrlParams = {
+  id: ApiId | ApiId[] | string;
+  level?: SongUrlLevel;
+  unblock?: boolean;
+};
+
+export type SongFreeTrialInfo = {
+  end?: number;
+  start?: number;
+};
+
+export type SongFreeTrialPrivilege = {
+  cannotListenReason?: number | null;
+  listenType?: unknown;
+  playReason?: unknown;
+  resConsumable?: boolean;
+  userConsumable?: boolean;
+};
+
+export type SongFreeTimeTrialPrivilege = {
+  remainTime?: number;
+  resConsumable?: boolean;
+  type?: number;
+  userConsumable?: boolean;
+};
+
+export type SongUrl = {
+  br?: number;
+  code?: number;
+  encodeType?: string;
+  fee?: number;
+  freeTimeTrialPrivilege?: SongFreeTimeTrialPrivilege;
+  freeTrialInfo?: SongFreeTrialInfo | null;
+  freeTrialPrivilege?: SongFreeTrialPrivilege;
+  id: ApiId;
+  level?: SongUrlLevel | string;
+  message?: string | null;
+  size?: number;
+  time?: number;
+  type?: string;
+  url?: string | null;
+};
+
+export type SongUrlResponse = {
+  code: number;
+  data: SongUrl[];
+};
+
 export type Playlist = {
   coverUrl?: string;
   description?: string;
@@ -78,7 +137,24 @@ export type PlaylistSong = Song & {
   ar?: SongArtist[];
   dt?: number;
   fee?: number;
+  freeTimeTrialPrivilege?: SongFreeTimeTrialPrivilege;
+  freeTrialInfo?: SongFreeTrialInfo | null;
+  freeTrialPrivilege?: SongFreeTrialPrivilege;
   mv?: ApiId;
+  privilege?: SongPrivilege;
+};
+
+export type SongPrivilege = {
+  cp?: number;
+  dl?: number;
+  fee?: number;
+  freeTimeTrialPrivilege?: SongFreeTimeTrialPrivilege;
+  freeTrialInfo?: SongFreeTrialInfo | null;
+  freeTrialPrivilege?: SongFreeTrialPrivilege;
+  id: ApiId;
+  pl?: number;
+  sp?: number;
+  st?: number;
 };
 
 export type PlaylistCreator = {
@@ -100,12 +176,12 @@ export type PlaylistDetail = Playlist & {
 export type PlaylistDetailResponse = {
   code: number;
   playlist?: PlaylistDetail;
-  privileges?: unknown[];
+  privileges?: SongPrivilege[];
 };
 
 export type SongDetailResponse = {
   code: number;
-  privileges?: unknown[];
+  privileges?: SongPrivilege[];
   songs: PlaylistSong[];
 };
 
@@ -114,6 +190,41 @@ export type PersonalizedResponse = {
   code: number;
   hasTaste?: boolean;
   result: PersonalizedPlaylist[];
+};
+
+export type TopPlaylistOrder = 'hot' | 'new';
+
+export type TopPlaylistParams = {
+  cat?: string;
+  limit?: number;
+  offset?: number;
+  order?: TopPlaylistOrder;
+};
+
+export type TopPlaylistCreator = {
+  avatarUrl?: string;
+  nickname?: string;
+  userId?: ApiId;
+};
+
+export type TopPlaylist = {
+  coverImgUrl?: string;
+  copywriter?: string;
+  creator?: TopPlaylistCreator;
+  description?: string | null;
+  id: ApiId;
+  name: string;
+  playCount?: number;
+  tags?: string[];
+  trackCount?: number;
+};
+
+export type TopPlaylistResponse = {
+  cat?: string;
+  code: number;
+  more?: boolean;
+  playlists: TopPlaylist[];
+  total?: number;
 };
 
 export type TopArtistsParams = {
@@ -152,6 +263,16 @@ export type TopArtistsResponse = {
   artists: TopArtist[];
   code: number;
   more: boolean;
+};
+
+export type ArtistTopSongsParams = {
+  id: ApiId;
+};
+
+export type ArtistTopSongsResponse = {
+  code: number;
+  more?: boolean;
+  songs: PlaylistSong[];
 };
 
 export type BannerType = 0 | 1 | 2 | 3;

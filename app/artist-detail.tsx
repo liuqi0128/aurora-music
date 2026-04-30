@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -12,10 +12,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatPlayCount } from '@/components/home/formatters';
+import { formatFansCount } from '@/components/home/formatters';
 import { HomeSectionStatus } from '@/components/home/home-section-status';
 import { isPreviewSong } from '@/components/player/playback-flags';
-import { useMusicPlayer, type MusicPlayerTrack } from '@/components/player/music-player-context';
+import {
+  useMusicPlayer,
+  type MusicPlayerTrack,
+} from '@/components/player/music-player-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -24,23 +27,33 @@ import { useCachedRequest } from '@/hooks/use-cached-request';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import {
   homeApi,
-  type ApiId,
-  type PlaylistDetailResponse,
+  type ArtistTopSongsResponse,
   type PlaylistSong,
-  type SongPrivilege,
 } from '@/services/api';
 
-type PlaylistDetailRouteParams = {
-  coverUrl?: string;
-  from?: string;
+type ArtistDetailRouteParams = {
+  albumSize?: string;
+  alias?: string;
+  fansCount?: string;
   id?: string;
+  musicSize?: string;
   name?: string;
+  picUrl?: string;
+  trans?: string;
 };
-
-const DEFAULT_RETURN_ROUTE = '/home/playlists' as Href;
 
 function getRouteParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getNumberParam(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : undefined;
 }
 
 function getSongKey(song: PlaylistSong) {
@@ -65,14 +78,14 @@ function getSongCoverUrl(song: PlaylistSong) {
   return song.al?.picUrl ?? song.coverUrl;
 }
 
-function getPlayerTrack(song: PlaylistSong, privilege?: SongPrivilege): MusicPlayerTrack {
+function getPlayerTrack(song: PlaylistSong): MusicPlayerTrack {
   return {
     album: getAlbumText(song),
     artist: getArtistText(song),
     coverUrl: getSongCoverUrl(song),
     duration: song.dt ?? song.duration,
     id: song.id,
-    isPreview: isPreviewSong(song, privilege),
+    isPreview: isPreviewSong(song),
     name: song.name,
   };
 }
@@ -89,29 +102,18 @@ function formatDuration(duration?: number) {
   return `${minutes}:${seconds}`;
 }
 
-function getOrderedSongs(songs: PlaylistSong[], trackIds: ApiId[]) {
-  if (trackIds.length === 0 || songs.length === 0) {
-    return songs;
-  }
-
-  const songsById = new Map(songs.map((song) => [getSongKey(song), song]));
-  const orderedSongs = trackIds
-    .map((id) => songsById.get(String(id)))
-    .filter((song): song is PlaylistSong => Boolean(song));
-  const orderedSongIds = new Set(orderedSongs.map(getSongKey));
-  const remainingSongs = songs.filter((song) => !orderedSongIds.has(getSongKey(song)));
-
-  return [...orderedSongs, ...remainingSongs];
-}
-
-export default function PlaylistDetailScreen() {
+export default function ArtistDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<PlaylistDetailRouteParams>();
-  const playlistId = getRouteParam(params.id);
-  const routeName = getRouteParam(params.name);
-  const routeCoverUrl = getRouteParam(params.coverUrl);
-  const returnPath = getRouteParam(params.from);
+  const params = useLocalSearchParams<ArtistDetailRouteParams>();
+  const artistId = getRouteParam(params.id);
+  const artistName = getRouteParam(params.name) ?? '歌手详情';
+  const artistPicUrl = getRouteParam(params.picUrl);
+  const alias = getRouteParam(params.alias);
+  const trans = getRouteParam(params.trans);
+  const fansCount = getNumberParam(getRouteParam(params.fansCount));
+  const musicSize = getNumberParam(getRouteParam(params.musicSize));
+  const albumSize = getNumberParam(getRouteParam(params.albumSize));
   const textColor = useThemeColor({}, 'text');
   const {
     currentTrack,
@@ -121,97 +123,51 @@ export default function PlaylistDetailScreen() {
     playTrack,
   } = useMusicPlayer();
 
-  const handleBack = useCallback(() => {
-    router.replace((returnPath || DEFAULT_RETURN_ROUTE) as Href);
-  }, [returnPath, router]);
-
-  const loadPlaylistDetail = useCallback(async (): Promise<PlaylistDetailResponse> => {
-    if (!playlistId) {
-      return { code: 400 };
+  const loadArtistSongs = useCallback(async (): Promise<ArtistTopSongsResponse> => {
+    if (!artistId) {
+      return { code: 400, songs: [] };
     }
 
-    return homeApi.getPlaylistDetail({ id: playlistId });
-  }, [playlistId]);
+    return homeApi.getArtistTopSongs({ id: artistId });
+  }, [artistId]);
 
   const {
-    data: playlistData,
-    error: playlistError,
-    loading: playlistLoading,
-    refresh: refreshPlaylist,
-    refreshing: playlistRefreshing,
-  } = useCachedRequest(`playlist:detail:${playlistId ?? 'missing'}`, loadPlaylistDetail, {
-    enabled: Boolean(playlistId),
+    data: artistSongsData,
+    error: artistSongsError,
+    loading: artistSongsLoading,
+    refresh: refreshArtistSongs,
+    refreshing: artistSongsRefreshing,
+  } = useCachedRequest(`artist:top-songs:${artistId ?? 'missing'}`, loadArtistSongs, {
+    enabled: Boolean(artistId),
   });
 
-  const playlist = playlistData?.playlist;
-  const trackIds = useMemo(
+  const songs = useMemo(() => artistSongsData?.songs ?? [], [artistSongsData?.songs]);
+  const artistSubTitle = alias || trans || (musicSize ? `${musicSize} 首歌曲` : '热门歌手');
+  const stats = useMemo(
     () =>
-      playlist?.trackIds
-        ?.map((track) => track.id)
-        .filter((id): id is ApiId => id !== undefined && id !== null) ?? [],
-    [playlist?.trackIds]
+      [
+        formatFansCount(fansCount),
+        typeof musicSize === 'number' ? `${musicSize} 首歌曲` : '',
+        typeof albumSize === 'number' ? `${albumSize} 张专辑` : '',
+      ].filter(Boolean),
+    [albumSize, fansCount, musicSize]
   );
-  const trackIdsSignature = useMemo(() => trackIds.map(String).join(','), [trackIds]);
-  const playlistTracks = useMemo(() => playlist?.tracks ?? [], [playlist?.tracks]);
-  const shouldLoadSongDetails = trackIds.length > 0 && playlistTracks.length < trackIds.length;
-
-  const loadSongDetails = useCallback(() => homeApi.getSongDetails(trackIds), [trackIds]);
-  const {
-    data: songData,
-    error: songError,
-    loading: songsLoading,
-    refresh: refreshSongs,
-    refreshing: songsRefreshing,
-  } = useCachedRequest(`playlist:songs:${playlistId ?? 'missing'}:${trackIdsSignature}`, loadSongDetails, {
-    enabled: shouldLoadSongDetails,
-  });
-
-  const songs = useMemo(() => {
-    const sourceSongs = songData?.songs?.length ? songData.songs : playlistTracks;
-
-    return getOrderedSongs(sourceSongs, trackIds);
-  }, [playlistTracks, songData?.songs, trackIds]);
-  const privilegesById = useMemo(() => {
-    const privileges = [...(playlistData?.privileges ?? []), ...(songData?.privileges ?? [])];
-
-    return new Map(privileges.map((privilege) => [String(privilege.id), privilege]));
-  }, [playlistData?.privileges, songData?.privileges]);
-
-  const refreshPage = useCallback(() => {
-    void refreshPlaylist();
-
-    if (shouldLoadSongDetails) {
-      void refreshSongs();
-    }
-  }, [refreshPlaylist, refreshSongs, shouldLoadSongDetails]);
 
   const handleSongPress = useCallback(
     (song: PlaylistSong) => {
-      void playTrack(getPlayerTrack(song, privilegesById.get(getSongKey(song))));
+      void playTrack(getPlayerTrack(song));
     },
-    [playTrack, privilegesById]
+    [playTrack]
   );
-
-  const playlistName = playlist?.name ?? routeName ?? '歌单详情';
-  const coverUrl = playlist?.coverImgUrl ?? playlist?.coverUrl ?? routeCoverUrl;
-  const playCountText = formatPlayCount(playlist?.playCount);
-  const trackCount = playlist?.trackCount ?? (trackIds.length || songs.length);
-  const creatorName = playlist?.creator?.nickname;
-  const refreshing = playlistRefreshing || songsRefreshing;
 
   const renderSong = useCallback(
     ({ item, index }: ListRenderItemInfo<PlaylistSong>) => {
       const songCoverUrl = getSongCoverUrl(item);
       const duration = formatDuration(item.dt ?? item.duration);
       const songId = getSongKey(item);
-      const isPreview = isPreviewSong(item, privilegesById.get(songId));
       const isActive = isCurrentTrack(item.id);
       const isLoading = loadingTrackId === songId;
-      const trailingContent = isLoading ? (
-        <ActivityIndicator color={AppTheme.colors.primary} size="small" />
-      ) : duration ? (
-        <ThemedText style={styles.duration}>{duration}</ThemedText>
-      ) : null;
+      const isPreview = isPreviewSong(item);
 
       return (
         <Pressable
@@ -263,15 +219,21 @@ export default function PlaylistDetailScreen() {
               ) : null}
             </View>
             <ThemedText numberOfLines={1} style={styles.songMeta}>
-              {getArtistText(item)} · {getAlbumText(item)}
+              {getAlbumText(item)}
             </ThemedText>
           </View>
 
-          <View style={styles.songTrailing}>{trailingContent}</View>
+          <View style={styles.songTrailing}>
+            {isLoading ? (
+              <ActivityIndicator color={AppTheme.colors.primary} size="small" />
+            ) : duration ? (
+              <ThemedText style={styles.duration}>{duration}</ThemedText>
+            ) : null}
+          </View>
         </Pressable>
       );
     },
-    [handleSongPress, isCurrentTrack, loadingTrackId, privilegesById]
+    [handleSongPress, isCurrentTrack, loadingTrackId]
   );
 
   return (
@@ -280,12 +242,14 @@ export default function PlaylistDetailScreen() {
         <Pressable
           accessibilityLabel="返回"
           accessibilityRole="button"
-          onPress={handleBack}
+          onPress={() => {
+            router.back();
+          }}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <IconSymbol color={textColor} name="chevron.left" size={26} />
         </Pressable>
         <ThemedText numberOfLines={1} style={styles.pageTitle} type="subtitle">
-          歌单详情
+          歌手详情
         </ThemedText>
         <View style={styles.headerSpacer} />
       </ThemedView>
@@ -295,33 +259,24 @@ export default function PlaylistDetailScreen() {
         data={songs}
         keyExtractor={(item, index) => `${getSongKey(item)}-${index}`}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            {!playlistId ? (
-              <HomeSectionStatus message="缺少歌单 ID" title="无法打开歌单" />
-            ) : playlistLoading ? (
-              <HomeSectionStatus loading message="正在加载歌单详情..." />
-            ) : playlistError && !playlist ? (
-              <HomeSectionStatus message={playlistError} title="歌单加载失败" />
-            ) : songsLoading ? (
-              <HomeSectionStatus loading message="正在加载歌曲..." />
-            ) : songError ? (
-              <HomeSectionStatus message={songError} title="歌曲加载失败" />
+          <View style={styles.statusWrap}>
+            {!artistId ? (
+              <HomeSectionStatus message="缺少歌手 ID" title="无法打开歌手详情" />
+            ) : artistSongsLoading ? (
+              <HomeSectionStatus loading message="正在加载热门歌曲..." />
+            ) : artistSongsError ? (
+              <HomeSectionStatus message={artistSongsError} title="热门歌曲加载失败" />
             ) : (
-              <HomeSectionStatus message="暂无歌曲数据" />
+              <HomeSectionStatus message="暂无热门歌曲数据" />
             )}
           </View>
         }
         ListFooterComponent={
-          songs.length > 0 ? (
+          songs.length > 0 && (artistSongsError || playbackError) ? (
             <View style={styles.footer}>
-              {songsLoading && shouldLoadSongDetails ? (
-                <HomeSectionStatus loading message="正在补全歌曲列表..." />
+              {artistSongsError ? (
+                <HomeSectionStatus message={artistSongsError} title="热门歌曲加载失败" />
               ) : null}
-
-              {songError && songs.length > 0 ? (
-                <HomeSectionStatus message={songError} title="部分歌曲加载失败" />
-              ) : null}
-
               {playbackError ? (
                 <HomeSectionStatus message={playbackError} title="播放失败" />
               ) : null}
@@ -331,67 +286,53 @@ export default function PlaylistDetailScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.hero}>
-              {coverUrl ? (
-                <Image contentFit="cover" source={{ uri: coverUrl }} style={styles.cover} />
+              {artistPicUrl ? (
+                <Image contentFit="cover" source={{ uri: artistPicUrl }} style={styles.artistAvatar} />
               ) : (
                 <ThemedView
                   lightColor={AppTheme.colors.surfaceSoft}
                   darkColor={AppTheme.colors.surfaceSoftDark}
-                  style={[styles.cover, styles.coverPlaceholder]}>
-                  {playlistLoading ? (
-                    <ActivityIndicator color={AppTheme.colors.primary} />
-                  ) : (
-                    <ThemedText numberOfLines={2} style={styles.coverText}>
-                      {playlistName}
-                    </ThemedText>
-                  )}
+                  style={[styles.artistAvatar, styles.artistAvatarPlaceholder]}>
+                  <ThemedText numberOfLines={2} style={styles.artistAvatarText}>
+                    {artistName}
+                  </ThemedText>
                 </ThemedView>
               )}
 
               <View style={styles.heroInfo}>
-                <ThemedText numberOfLines={2} style={styles.heroTitle} type="subtitle">
-                  {playlistName}
+                <ThemedText numberOfLines={2} style={styles.artistName} type="subtitle">
+                  {artistName}
                 </ThemedText>
-                {creatorName ? (
-                  <ThemedText numberOfLines={1} style={styles.heroMeta}>
-                    {creatorName}
-                  </ThemedText>
-                ) : null}
-                <View style={styles.badges}>
-                  {trackCount ? (
-                    <ThemedView
-                      lightColor={AppTheme.colors.primaryLight}
-                      darkColor={AppTheme.colors.surfaceDark}
-                      style={styles.badge}>
-                      <ThemedText style={styles.badgeText}>{trackCount} 首</ThemedText>
-                    </ThemedView>
-                  ) : null}
-                  {playCountText ? (
-                    <ThemedView
-                      lightColor={AppTheme.colors.surface}
-                      darkColor={AppTheme.colors.surfaceDark}
-                      style={styles.badge}>
-                      <ThemedText style={styles.badgeText}>{playCountText}</ThemedText>
-                    </ThemedView>
-                  ) : null}
-                </View>
-                {playlist?.description ? (
-                  <ThemedText numberOfLines={2} style={styles.description}>
-                    {playlist.description}
-                  </ThemedText>
+                <ThemedText numberOfLines={1} style={styles.artistSubTitle}>
+                  {artistSubTitle}
+                </ThemedText>
+                {stats.length > 0 ? (
+                  <View style={styles.stats}>
+                    {stats.map((stat) => (
+                      <ThemedView
+                        key={stat}
+                        lightColor={AppTheme.colors.surface}
+                        darkColor={AppTheme.colors.surfaceDark}
+                        style={styles.statBadge}>
+                        <ThemedText style={styles.statText}>{stat}</ThemedText>
+                      </ThemedView>
+                    ))}
+                  </View>
                 ) : null}
               </View>
             </View>
 
-            <ThemedText type="subtitle">歌曲列表</ThemedText>
+            <ThemedText type="subtitle">热门歌曲</ThemedText>
           </View>
         }
         refreshControl={
           <RefreshControl
             colors={[AppTheme.colors.primary]}
-            enabled={Boolean(playlistId)}
-            onRefresh={refreshPage}
-            refreshing={refreshing}
+            enabled={Boolean(artistId)}
+            onRefresh={() => {
+              void refreshArtistSongs();
+            }}
+            refreshing={artistSongsRefreshing}
             tintColor={AppTheme.colors.primary}
           />
         }
@@ -406,62 +347,54 @@ const styles = StyleSheet.create({
   activeText: {
     color: AppTheme.colors.primary,
   },
-  badge: {
+  artistAvatar: {
+    alignItems: 'center',
     borderRadius: AppTheme.radius.pill,
+    height: 112,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 112,
+  },
+  artistAvatarPlaceholder: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
   },
-  badgeText: {
-    color: AppTheme.colors.primaryDark,
-    fontSize: 12,
-    lineHeight: 16,
+  artistAvatarText: {
+    color: AppTheme.colors.muted,
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: 'center',
   },
-  badges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  artistName: {
+    lineHeight: 25,
+  },
+  artistSubTitle: {
+    color: AppTheme.colors.muted,
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  backButton: {
+    alignItems: 'center',
+    borderRadius: AppTheme.radius.md,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
   },
   container: {
     flex: 1,
   },
   content: {
-    gap: 12,
+    gap: 8,
     paddingBottom: 30,
     paddingHorizontal: 16,
     paddingTop: 18,
   },
   contentWithPlayer: {
-    paddingBottom: 138,
-  },
-  cover: {
-    borderRadius: AppTheme.radius.md,
-    height: 112,
-    overflow: 'hidden',
-    width: 112,
-  },
-  coverPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coverText: {
-    color: AppTheme.colors.muted,
-    fontSize: 14,
-    lineHeight: 18,
-    paddingHorizontal: 8,
-    textAlign: 'center',
-  },
-  description: {
-    color: AppTheme.colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
+    paddingBottom: 148,
   },
   duration: {
     color: AppTheme.colors.muted,
     fontSize: 12,
     lineHeight: 16,
-  },
-  emptyContainer: {
-    paddingVertical: 12,
   },
   footer: {
     gap: 12,
@@ -470,13 +403,6 @@ const styles = StyleSheet.create({
   header: {
     gap: 20,
     marginBottom: 2,
-  },
-  backButton: {
-    alignItems: 'center',
-    borderRadius: AppTheme.radius.md,
-    height: 42,
-    justifyContent: 'center',
-    width: 42,
   },
   headerSpacer: {
     width: 42,
@@ -490,14 +416,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 9,
     minWidth: 0,
-  },
-  heroMeta: {
-    color: AppTheme.colors.muted,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  heroTitle: {
-    lineHeight: 25,
   },
   indexText: {
     color: AppTheme.colors.muted,
@@ -573,12 +491,6 @@ const styles = StyleSheet.create({
   songRowActive: {
     backgroundColor: 'rgba(255, 92, 122, 0.1)',
   },
-  songTrailing: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    minHeight: 28,
-    width: 46,
-  },
   songTitle: {
     flexShrink: 1,
     fontSize: 15,
@@ -589,5 +501,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
     minWidth: 0,
+  },
+  songTrailing: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    minHeight: 28,
+    width: 46,
+  },
+  statBadge: {
+    borderRadius: AppTheme.radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statText: {
+    color: AppTheme.colors.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  stats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statusWrap: {
+    paddingVertical: 12,
   },
 });

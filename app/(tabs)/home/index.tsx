@@ -4,6 +4,7 @@ import { Platform, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { HomeBannerSection } from '@/components/home/home-banner-section';
 import { RecommendedPlaylistsSection } from '@/components/home/recommended-playlists-section';
 import { TopArtistsSection } from '@/components/home/top-artists-section';
+import { useMusicPlayer } from '@/components/player/music-player-context';
 import { ThemedView } from '@/components/themed-view';
 import { AppTheme } from '@/constants/theme';
 import { useCachedRequest } from '@/hooks/use-cached-request';
@@ -19,6 +20,7 @@ const RECOMMENDATION_LIMIT = 6;
 const TOP_ARTIST_LIMIT = 8;
 
 export default function RecommendScreen() {
+  const { currentTrack } = useMusicPlayer();
   const bannerType = useMemo<BannerType>(() => {
     if (Platform.OS === 'web') {
       return 0;
@@ -76,7 +78,7 @@ export default function RecommendScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, currentTrack && styles.contentWithPlayer]}
         refreshControl={
           <RefreshControl
             colors={[AppTheme.colors.primary]}
@@ -110,5 +112,8 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingHorizontal: 24,
     paddingTop: 28,
+  },
+  contentWithPlayer: {
+    paddingBottom: 152,
   },
 });

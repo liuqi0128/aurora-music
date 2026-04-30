@@ -1,3 +1,4 @@
+import { type Href, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
@@ -22,8 +23,13 @@ type TopNavigationProps = {
 };
 
 const DRAWER_RATIO = 0.75;
+const DRAWER_ITEMS: { href?: Href; label: string }[] = [
+  { href: '/recent-plays', label: '最近播放' },
+  { label: '设置' },
+];
 
 export function TopNavigation({ activeTab, onTabChange, tabs, title }: TopNavigationProps) {
+  const router = useRouter();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -47,12 +53,21 @@ export function TopNavigation({ activeTab, onTabChange, tabs, title }: TopNaviga
     }).start();
   };
 
-  const closeDrawer = () => {
+  const closeDrawer = (onClosed?: () => void) => {
     Animated.timing(slideX, {
       duration: 180,
       toValue: -drawerWidth,
       useNativeDriver: true,
-    }).start(() => setDrawerVisible(false));
+    }).start(() => {
+      setDrawerVisible(false);
+      onClosed?.();
+    });
+  };
+
+  const navigateFromDrawer = (href: Href) => {
+    closeDrawer(() => {
+      router.push(href);
+    });
   };
 
   return (
@@ -106,12 +121,19 @@ export function TopNavigation({ activeTab, onTabChange, tabs, title }: TopNaviga
 
       <Modal
         animationType="fade"
-        onRequestClose={closeDrawer}
+        onRequestClose={() => {
+          closeDrawer();
+        }}
         statusBarTranslucent
         transparent
         visible={drawerVisible}>
         <View style={styles.modalRoot}>
-          <Pressable style={styles.backdrop} onPress={closeDrawer} />
+          <Pressable
+            style={styles.backdrop}
+            onPress={() => {
+              closeDrawer();
+            }}
+          />
           <Animated.View
             style={[
               styles.drawer,
@@ -130,16 +152,23 @@ export function TopNavigation({ activeTab, onTabChange, tabs, title }: TopNaviga
             </View>
 
             <View style={styles.drawerList}>
-              {['最近播放', '我的收藏', '下载管理', '设置'].map((item) => (
+              {DRAWER_ITEMS.map((item) => (
                 <Pressable
-                  key={item}
-                  onPress={closeDrawer}
+                  key={item.label}
+                  onPress={() => {
+                    if (item.href) {
+                      navigateFromDrawer(item.href);
+                      return;
+                    }
+
+                    closeDrawer();
+                  }}
                   style={({ pressed }) => [
                     styles.drawerItem,
                     { backgroundColor: surfaceColor },
                     pressed && styles.pressed,
                   ]}>
-                  <ThemedText type="defaultSemiBold">{item}</ThemedText>
+                  <ThemedText type="defaultSemiBold">{item.label}</ThemedText>
                 </Pressable>
               ))}
             </View>

@@ -10,31 +10,45 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppTheme } from '@/constants/theme';
 import { useCachedRequest } from '@/hooks/use-cached-request';
-import { homeApi, type PersonalizedPlaylist } from '@/services/api';
+import { homeApi, type TopPlaylist } from '@/services/api';
 
 const PLAYLIST_LIMIT = 24;
+const PLAYLIST_CATEGORY = '全部';
 
 export default function PlaylistsScreen() {
   const router = useRouter();
-  const loadPlaylists = useCallback(() => homeApi.getRecommendations({ limit: PLAYLIST_LIMIT }), []);
+  const loadPlaylists = useCallback(
+    () =>
+      homeApi.getTopPlaylists({
+        cat: PLAYLIST_CATEGORY,
+        limit: PLAYLIST_LIMIT,
+        offset: 0,
+        order: 'hot',
+      }),
+    []
+  );
   const {
     data: playlistData,
     error: playlistError,
     loading: playlistsLoading,
     refresh: refreshPlaylists,
     refreshing: playlistsRefreshing,
-  } = useCachedRequest('home:playlists:personalized', loadPlaylists);
-  const playlists = useMemo<PersonalizedPlaylist[]>(
-    () => playlistData?.result ?? [],
+  } = useCachedRequest('home:playlists:top:all:hot', loadPlaylists);
+  const playlists = useMemo<TopPlaylist[]>(
+    () => playlistData?.playlists ?? [],
     [playlistData]
   );
 
   const renderPlaylist = useCallback(
-    ({ item }: { item: PersonalizedPlaylist }) => {
-      const trackCount = item.trackCount ?? item.trackNumber;
+    ({ item }: { item: TopPlaylist }) => {
+      const trackCount = item.trackCount;
       const playCountText = formatPlayCount(item.playCount);
+      const tagText = item.tags?.filter(Boolean).join(' / ');
       const description =
-        item.copywriter ?? (trackCount ? `${trackCount} 首歌曲` : '为你推荐的精选歌单');
+        item.copywriter ||
+        item.description ||
+        tagText ||
+        (trackCount ? `${trackCount} 首歌曲` : '精选歌单');
 
       return (
         <Pressable
@@ -42,7 +56,7 @@ export default function PlaylistsScreen() {
           onPress={() => {
             router.push(
               createPlaylistDetailHref({
-                coverUrl: item.picUrl,
+                coverUrl: item.coverImgUrl,
                 from: '/home/playlists',
                 id: item.id,
                 name: item.name,
@@ -54,8 +68,8 @@ export default function PlaylistsScreen() {
             lightColor={AppTheme.colors.background}
             darkColor={AppTheme.colors.surfaceDark}
             style={styles.playlistCard}>
-            {item.picUrl ? (
-              <Image contentFit="cover" source={{ uri: item.picUrl }} style={styles.cover} />
+            {item.coverImgUrl ? (
+              <Image contentFit="cover" source={{ uri: item.coverImgUrl }} style={styles.cover} />
             ) : (
               <ThemedView
                 lightColor={AppTheme.colors.surfaceSoft}
