@@ -6,6 +6,7 @@ import { formatFansCount } from '@/components/home/formatters';
 import { HomeSectionStatus } from '@/components/home/home-section-status';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { AppTheme } from '@/constants/theme';
 import type { TopArtist } from '@/services/api';
 
@@ -96,32 +97,52 @@ export function TopArtistsSection({ artists, error, loading }: TopArtistsSection
                   lightColor={AppTheme.colors.background}
                   darkColor={AppTheme.colors.surfaceDark}
                   style={styles.artistCard}>
-                <View style={styles.artistAvatarFrame}>
-                  {imageUrl ? (
-                    <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.artistAvatar} />
-                  ) : (
-                    <ThemedView
-                      lightColor={AppTheme.colors.surfaceSoft}
-                      darkColor={AppTheme.colors.surfaceSoftDark}
-                      style={[styles.artistAvatar, styles.artistAvatarPlaceholder]}>
-                      <ThemedText numberOfLines={1} style={styles.artistAvatarText}>
-                        {artist.name}
-                      </ThemedText>
-                    </ThemedView>
-                  )}
-                </View>
+                  <View pointerEvents="none" style={styles.artistAccent} />
+                  <ThemedView
+                    lightColor={AppTheme.colors.background}
+                    darkColor={AppTheme.colors.surfaceDark}
+                    style={styles.artistAvatarRing}>
+                    <View style={styles.artistAvatarFrame}>
+                      {imageUrl ? (
+                        <Image
+                          contentFit="cover"
+                          source={{ uri: imageUrl }}
+                          style={styles.artistAvatar}
+                        />
+                      ) : (
+                        <ThemedView
+                          lightColor={AppTheme.colors.surfaceSoft}
+                          darkColor={AppTheme.colors.surfaceSoftDark}
+                          style={[styles.artistAvatar, styles.artistAvatarPlaceholder]}>
+                          <IconSymbol
+                            color={AppTheme.colors.muted}
+                            name="person.circle.fill"
+                            size={34}
+                          />
+                          <ThemedText numberOfLines={1} style={styles.artistAvatarText}>
+                            {artist.name}
+                          </ThemedText>
+                        </ThemedView>
+                      )}
+                    </View>
+                  </ThemedView>
 
-                <ThemedText numberOfLines={1} style={styles.artistName} type="defaultSemiBold">
-                  {artist.name}
-                </ThemedText>
-                <ThemedText numberOfLines={1} style={styles.artistMeta}>
-                  {artistMeta}
-                </ThemedText>
-                {artistStat ? (
-                  <ThemedText numberOfLines={1} style={styles.artistStat}>
-                    {artistStat}
-                  </ThemedText>
-                ) : null}
+                  <View style={styles.artistInfo}>
+                    <ThemedText numberOfLines={1} style={styles.artistName} type="defaultSemiBold">
+                      {artist.name}
+                    </ThemedText>
+                    <ThemedText numberOfLines={1} style={styles.artistMeta}>
+                      {artistMeta}
+                    </ThemedText>
+                  </View>
+
+                  {artistStat ? (
+                    <View style={styles.artistStatPill}>
+                      <ThemedText numberOfLines={1} style={styles.artistStat}>
+                        {artistStat}
+                      </ThemedText>
+                    </View>
+                  ) : null}
                 </ThemedView>
               </Pressable>
             );
@@ -133,6 +154,16 @@ export function TopArtistsSection({ artists, error, loading }: TopArtistsSection
 }
 
 const styles = StyleSheet.create({
+  artistAccent: {
+    backgroundColor: 'rgba(255, 92, 122, 0.11)',
+    borderTopLeftRadius: AppTheme.radius.md,
+    borderTopRightRadius: AppTheme.radius.md,
+    height: 56,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   artistAvatar: {
     height: '100%',
     width: '100%',
@@ -141,29 +172,53 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: AppTheme.radius.pill,
     overflow: 'hidden',
-    width: 86,
+    width: 88,
   },
   artistAvatarPlaceholder: {
     alignItems: 'center',
+    gap: 4,
     justifyContent: 'center',
+  },
+  artistAvatarRing: {
+    borderColor: 'rgba(255, 255, 255, 0.78)',
+    borderRadius: AppTheme.radius.pill,
+    borderWidth: 3,
+    elevation: 2,
+    marginTop: 6,
+    padding: 3,
+    shadowColor: AppTheme.colors.shadow,
+    shadowOffset: { height: 3, width: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   artistAvatarText: {
     color: AppTheme.colors.muted,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 14,
     paddingHorizontal: 8,
     textAlign: 'center',
   },
   artistCard: {
     alignItems: 'center',
+    borderColor: 'rgba(255, 92, 122, 0.12)',
     borderRadius: AppTheme.radius.md,
-    elevation: 1,
-    gap: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 3,
+    gap: 8,
+    minHeight: 188,
     padding: 12,
+    position: 'relative',
     shadowColor: AppTheme.colors.shadow,
-    shadowOffset: { height: 2, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    width: 132,
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    width: 144,
+  },
+  artistInfo: {
+    alignItems: 'center',
+    gap: 3,
+    minHeight: 39,
+    width: '100%',
   },
   artistMeta: {
     color: AppTheme.colors.muted,
@@ -173,16 +228,23 @@ const styles = StyleSheet.create({
   artistName: {
     fontSize: 15,
     lineHeight: 20,
-    marginTop: 2,
   },
   artistRail: {
-    gap: 14,
+    gap: 16,
     paddingHorizontal: 24,
   },
   artistStat: {
     color: AppTheme.colors.primary,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 14,
+  },
+  artistStatPill: {
+    backgroundColor: 'rgba(255, 92, 122, 0.13)',
+    borderRadius: AppTheme.radius.pill,
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   horizontalScroller: {
     marginHorizontal: -24,

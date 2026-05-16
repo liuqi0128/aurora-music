@@ -7,6 +7,7 @@ import { HomeSectionStatus } from '@/components/home/home-section-status';
 import { createPlaylistDetailHref } from '@/components/home/playlist-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { AppTheme } from '@/constants/theme';
 import type { PersonalizedPlaylist } from '@/services/api';
 
@@ -53,6 +54,7 @@ export function RecommendedPlaylistsSection({
 
             return (
               <Pressable
+                accessibilityLabel={`查看 ${playlist.name} 歌单`}
                 accessibilityRole="button"
                 key={playlist.id}
                 onPress={() => {
@@ -68,7 +70,7 @@ export function RecommendedPlaylistsSection({
                 style={({ pressed }) => [pressed && styles.pressed]}>
                 <ThemedView
                   lightColor={AppTheme.colors.background}
-                  darkColor={AppTheme.colors.surfaceDark}
+                  darkColor={AppTheme.colors.background}
                   style={styles.playlistCard}>
                   <View style={styles.coverFrame}>
                     {playlist.picUrl ? (
@@ -90,20 +92,37 @@ export function RecommendedPlaylistsSection({
 
                     {playCountText ? (
                       <View style={styles.playCountBadge}>
+                        <IconSymbol
+                          color={AppTheme.colors.textInverted}
+                          name="headphones"
+                          size={12}
+                        />
                         <ThemedText style={styles.playCountText}>{playCountText}</ThemedText>
                       </View>
                     ) : null}
+
+                    <View style={styles.coverDescription}>
+                      <ThemedText
+                        ellipsizeMode="tail"
+                        numberOfLines={2}
+                        style={styles.coverDescriptionText}>
+                        {description}
+                      </ThemedText>
+                    </View>
+
+                    <View pointerEvents="none" style={styles.coverBorder} />
                   </View>
 
-                  <ThemedText
-                    numberOfLines={2}
-                    style={styles.playlistTitle}
-                    type="defaultSemiBold">
-                    {playlist.name}
-                  </ThemedText>
-                  <ThemedText numberOfLines={2} style={styles.playlistDescription}>
-                    {description}
-                  </ThemedText>
+                  <View style={styles.playlistInfo}>
+                    <ThemedText
+                      darkColor={AppTheme.colors.text}
+                      lightColor={AppTheme.colors.text}
+                      numberOfLines={2}
+                      style={styles.playlistTitle}
+                      type="defaultSemiBold">
+                      {playlist.name}
+                    </ThemedText>
+                  </View>
                 </ThemedView>
               </Pressable>
             );
@@ -122,6 +141,26 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
   },
+  coverBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: AppTheme.radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  coverDescription: {
+    backgroundColor: 'rgba(0, 0, 0, 0.52)',
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    position: 'absolute',
+    right: 0,
+  },
+  coverDescriptionText: {
+    color: AppTheme.colors.textInverted,
+    fontSize: 11,
+    lineHeight: 15,
+  },
   coverImage: {
     height: '100%',
     width: '100%',
@@ -138,16 +177,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   horizontalScroller: {
+    backgroundColor: AppTheme.colors.background,
     marginHorizontal: -24,
   },
   playCountBadge: {
+    alignItems: 'center',
     backgroundColor: AppTheme.colors.badgeOverlay,
     borderRadius: AppTheme.radius.pill,
-    bottom: 8,
-    paddingHorizontal: 8,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     position: 'absolute',
-    right: 8,
+    left: 9,
+    top: 9,
   },
   playCountText: {
     color: AppTheme.colors.textInverted,
@@ -155,28 +198,31 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   playlistCard: {
+    backgroundColor: AppTheme.colors.background,
+    borderColor: 'rgba(255, 92, 122, 0.12)',
     borderRadius: AppTheme.radius.md,
-    elevation: 1,
-    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 3,
+    gap: 10,
+    minHeight: 218,
     padding: 10,
     shadowColor: AppTheme.colors.shadow,
-    shadowOffset: { height: 2, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    width: 152,
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    width: 164,
   },
-  playlistDescription: {
-    color: AppTheme.colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
+  playlistInfo: {
+    gap: 6,
   },
   playlistRail: {
-    gap: 14,
+    gap: 16,
     paddingHorizontal: 24,
   },
   playlistTitle: {
     fontSize: 15,
     lineHeight: 20,
+    minHeight: 40,
   },
   pressed: {
     opacity: 0.72,
